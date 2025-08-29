@@ -47,7 +47,7 @@ def main():
                 poll_wait = WebDriverWait(driver, 25)
                 
                 # --- UNIVERSAL SELECTOR: Checks for the main app container ---
-                app_container_xpath = "//div[@data-testid='stAppViewContainer']"
+                app_container_xpath = "//div[@class='appview-container']"
                 poll_wait.until(EC.presence_of_element_located((By.XPATH, app_container_xpath)))
                 
                 print("Application has fully loaded! ✅")
