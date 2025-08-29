@@ -6,10 +6,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException
-import time
 import os
 
-# You can now pass the URL as an environment variable in your GitHub Action
+# Streamlit app URL from environment variable (or default)
 STREAMLIT_URL = os.environ.get("STREAMLIT_APP_URL", "https://benson-mugure-portfolio.streamlit.app/")
 
 def main():
@@ -21,54 +20,38 @@ def main():
     options.add_argument('--window-size=1920,1080')
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    app_loaded = False
 
     try:
         driver.get(STREAMLIT_URL)
         print(f"Opened {STREAMLIT_URL}")
 
-        # Try to click the wake-up button if it exists
+        wait = WebDriverWait(driver, 15)
         try:
-            initial_wait = WebDriverWait(driver, 20)
-            button = initial_wait.until(
+            # Look for the wake-up button
+            button = wait.until(
                 EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'Yes, get this app back up')]"))
             )
+            print("Wake-up button found. Clicking...")
             button.click()
-            print("Button clicked successfully!")
-            print("Found wake-up message: app is starting ⏳")
-        except TimeoutException:
-            print("No wake-up button found. Assuming app is already running or loading.")
 
-        # Polling loop to check for app load status
-        print("Starting polling loop to check for app load status...")
-        for i in range(1, 7):
-            print(f"--- Attempt {i}/6 ---")
+            # After clicking, check if it disappears
             try:
-                poll_wait = WebDriverWait(driver, 25)
-                
-                # --- UNIVERSAL SELECTOR: Checks for the main app container ---
-                app_container_xpath = "//div[@class='appview-container']"
-                poll_wait.until(EC.presence_of_element_located((By.XPATH, app_container_xpath)))
-                
-                print("Application has fully loaded! ✅")
-                app_loaded = True
-                break 
+                wait.until(EC.invisibility_of_element_located((By.XPATH, "//button[contains(text(),'Yes, get this app back up')]")))
+                print("Button clicked and disappeared ✅ (app should be waking up)")
             except TimeoutException:
-                print("App not loaded yet. Refreshing page and trying again...")
-                driver.refresh()
-                time.sleep(5)
+                print("Button was clicked but did NOT disappear ❌ (possible failure)")
+                exit(1)
+
+        except TimeoutException:
+            # No button at all → app is assumed to be awake
+            print("No wake-up button found. Assuming app is already awake ✅")
 
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"Unexpected error: {e}")
+        exit(1)
     finally:
-        if not app_loaded:
-            print("App did not load within the expected time. ❌")
         driver.quit()
         print("Script finished.")
-    
-    if not app_loaded:
-        exit(1)
-
 
 if __name__ == "__main__":
     main()
