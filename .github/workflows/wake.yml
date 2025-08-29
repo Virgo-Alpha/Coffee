@@ -24,3 +24,17 @@ jobs:
 
       - name: Run Selenium script
         run: python main.py
+
+      - name: Verify app is responding
+        run: |
+          for i in {1..6}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://benson-mugure-portfolio.streamlit.app/)
+            echo "Attempt $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "App is awake ✅"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "App did not wake up ❌"
+          exit 1
