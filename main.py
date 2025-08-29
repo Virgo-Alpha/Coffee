@@ -25,7 +25,6 @@ def main():
         driver.get(STREAMLIT_URL)
         print(f"Opened {STREAMLIT_URL}")
 
-        # Wait for the button and click it
         wait = WebDriverWait(driver, 30)
         button = wait.until(
             EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'Yes, get this app back up')]"))
@@ -33,12 +32,29 @@ def main():
         button.click()
         print("Button clicked successfully!")
 
+        # Option 1: wait for button to disappear
+        try:
+            wait.until(EC.invisibility_of_element_located((By.XPATH, "//button[contains(text(),'Yes, get this app back up')]")))
+            print("Wake-up button disappeared ✅")
+        except TimeoutException:
+            print("Button did not disappear in time ❌")
+
+        # Option 2: wait for "waking up" text to appear
+        try:
+            wait.until(
+                EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'This will take just a sec! Your app is waking up!')]"))
+            )
+            print("Found wake-up message: app is starting ⏳")
+        except TimeoutException:
+            print("Did not see wake-up message — maybe app started instantly or text changed")
+
     except TimeoutException:
         print("No button found — maybe the app was already awake?")
     except Exception as e:
         print("Error:", e)
     finally:
         driver.quit()
+
 
 if __name__ == "__main__":
     main()
